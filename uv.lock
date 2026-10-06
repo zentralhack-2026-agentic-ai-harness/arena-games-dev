@@ -5,7 +5,7 @@ requires-python = ">=3.13"
 [[package]]
 name = "arena"
 version = "0.1.0"
-source = { git = "https://github.com/zentralhack-2026-agentic-ai-harness/arena?branch=main#39be1593c92891d3ee5a9a62f051f4c4b39ab9c4" }
+source = { git = "https://github.com/zentralhack-2026-agentic-ai-harness/arena?branch=main#e2a0cf32ef4645061395058ef7fc182e52eb49cf" }
 
 [[package]]
 name = "arena-games-dev"
