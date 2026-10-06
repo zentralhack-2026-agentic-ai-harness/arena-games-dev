@@ -5,15 +5,7 @@ requires-python = ">=3.13"
 [[package]]
 name = "arena"
 version = "0.1.0"
-source = { editable = "../arena" }
-
-[package.metadata]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pytest" },
-    { name = "ruff" },
-]
+source = { git = "https://github.com/zentralhack-2026-agentic-ai-harness/arena?branch=main#39be1593c92891d3ee5a9a62f051f4c4b39ab9c4" }
 
 [[package]]
 name = "arena-games-dev"
@@ -36,7 +28,7 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "arena", editable = "../arena" },
+    { name = "arena", git = "https://github.com/zentralhack-2026-agentic-ai-harness/arena?branch=main" },
     { name = "matplotlib", marker = "extra == 'render'", specifier = ">=3.11.2" },
 ]
 provides-extras = ["render"]

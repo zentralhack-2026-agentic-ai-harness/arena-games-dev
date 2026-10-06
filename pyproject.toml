@@ -15,8 +15,8 @@ render = [
 dev = ["pytest", "ruff"]
 
 [tool.uv.sources]
-# Local checkout during development; switch to a git source once arena is published.
-arena = { path = "../arena", editable = true }
+# Tracks main; uv.lock pins the exact commit. `uv lock --upgrade-package arena` moves it.
+arena = { git = "https://github.com/zentralhack-2026-agentic-ai-harness/arena", branch = "main" }
 
 [build-system]
 requires = ["hatchling"]
