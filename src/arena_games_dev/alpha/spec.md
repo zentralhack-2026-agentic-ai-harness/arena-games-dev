@@ -4,7 +4,9 @@
 
 Two players compete for demand on a fixed graph over a fixed number of turns. Each turn, both
 players move drones between nodes; drones present at a node capture a share of that node's demand
-proportional to the capacity they bring. Cumulative reward across the whole game decides the match.
+proportional to the capacity they bring. Reward accumulates over the whole game. A match has no
+winner: what counts is the reward you collect, over all matches of a tournament (see
+"Tournament and ranking").
 
 This document is the complete definition of the game. You will not get the game's source code or
 a simulator, so everything needed to write a strategy, or to build your own simulator, is here.
@@ -98,7 +100,8 @@ class MyStrategy:
 - A new instance is created for every match, with `player_id` 0 or 1.
 - `act` is called once per turn, 100 times per match. You can keep state on `self` between turns.
 - Your `player_id` is not in the observation. Store it in `__init__`.
-- If `act` raises an exception, you forfeit the match (see "End of game").
+- If `act` raises an exception, takes too long or crashes, you forfeit the rest of the match (see
+  "End of game").
 
 Your `player_id` tells you where your base is:
 
@@ -208,7 +211,8 @@ For example, at node 7 (demand 32), 2 drones against 1 drone gives `10` and `5`;
 4 drones gives `21.33` and `10.67`.
 
 A node with no demand (both bases) or no drones contributes nothing. Your reward for a turn is
-the sum of `served_i` over all nodes. Your score is the sum of your rewards over all turns.
+the sum of `served_i` over all nodes. Your score in a match is the sum of your rewards over all
+turns.
 
 ### Worked example: turn 0
 
@@ -246,8 +250,23 @@ Both players get reward 28 for turn 0. Player 0's observation on turn 1 is then:
 
 ## End of game
 
-The game ends after 100 turns (turns 0 to 99). The player with the higher score wins, and equal
-scores are a draw.
+The game ends after 100 turns (turns 0 to 99). There is no winner: each player's result is its
+score, the reward it collected.
 
-If your strategy raises an exception, you forfeit: the match stops immediately and you lose,
-whatever the scores.
+Your strategy forfeits the rest of the match if it raises an exception, takes longer than
+1 second for one call of `act` (10 seconds for `__init__`), or crashes. You keep the reward
+collected until then. From that turn on your moves are empty: your drones stay where they are and
+still take their share of each node's demand, but what they collect no longer counts for you. The
+opponent plays on to the end.
+
+## Tournament and ranking
+
+Your strategy plays a tournament: every strategy in it (those of the other participants and a few
+reference strategies) plays every other one, in both seats. A separate tournament is played for
+each game and each budget setting.
+
+Your result in a tournament is your **revenue share**: the total reward your strategy collected in
+all its matches, divided by the total reward collected by all strategies in the tournament.
+Winning or losing a match does not count, only reward does: your own reward counts in full, an
+opponent's reward only through the tournament's total, which it shares with every other strategy.
+Across games, the revenue shares are averaged.
