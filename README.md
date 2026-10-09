@@ -26,7 +26,7 @@ and CLI, as well.
 Requires [uv](https://docs.astral.sh/uv/). Python 3.13 is pinned in `.python-version`.
 
 ```bash
-uv sync --extra render   # matplotlib, for AlphaGame.render() and the frame-dump test
+uv sync --extra render   # matplotlib, for the games' render() and the frame-dump tests
 uv run pytest
 ```
 
@@ -59,3 +59,25 @@ uv run arena run --game arena_games_dev.alpha:AlphaGame \
 | game  | status |
 |-------|--------|
 | alpha | done   |
+| beta  | draft: random map, upkeep, growing demand with a forecast window; balancing open |
+
+## Render a match
+
+Every game has `render()`, which returns a matplotlib figure of the current state. The tests dump
+one PNG per turn to `outputs/` (gitignored), e.g. for beta:
+
+```bash
+uv run pytest tests/test_beta.py -k frames
+```
+
+Or for any seed and strategies:
+
+```python
+from arena_games_dev.beta import BetaGame
+from arena_games_dev.beta.baselines import GreedyResponse, ProportionalSpread
+
+game, players = BetaGame(seed=3), [GreedyResponse(0), ProportionalSpread(1)]
+while not game.is_over():
+    game.step([p.act(game.observe(p.player_id)) for p in players])
+game.render().savefig("beta_seed3.png")
+```
