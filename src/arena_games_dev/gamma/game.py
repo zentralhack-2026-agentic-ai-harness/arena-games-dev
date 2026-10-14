@@ -12,9 +12,12 @@ is created, so every table that plays a seed faces exactly the same environment.
 
 import random
 from dataclasses import dataclass
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from arena.core import Game
+
+if TYPE_CHECKING:
+    from matplotlib.figure import Figure
 
 N_PLAYERS = 3
 N_CYCLES = 10
@@ -117,6 +120,8 @@ class GammaGame(Game):
 
         # Negotiation of the current cycle: one {"claims", "accept"} entry per completed round.
         self.negotiation: list[dict] = []
+        # Every cycle's negotiation (entry c is cycle c's list), for analysis and rendering.
+        self.negotiation_log: list[list[dict]] = [self.negotiation]
         self.claims: list[list[int]] | None = None  # this round's claims, during "respond"
         # One record per completed negotiation (the current cycle's included, once in play).
         self.records: list[dict] = []
@@ -213,7 +218,8 @@ class GammaGame(Game):
         for player_id, action in enumerate(actions):
             allocation = self._parse_allocation(action)
             self.action_valid_last_step[player_id] = allocation is not None
-            self.allocation[player_id] = allocation or [0] * self.n_nodes
+            if allocation is not None:  # an invalid action (or None) keeps the last allocation
+                self.allocation[player_id] = allocation
 
         n = self.N_PLAYERS
         demand = self.demand[self.cycle]
@@ -236,6 +242,7 @@ class GammaGame(Game):
             self.round = 0
             self.turn_in_cycle = 0
             self.negotiation = []
+            self.negotiation_log.append(self.negotiation)
             self.phase = "propose"
 
     def is_over(self) -> bool:
@@ -243,6 +250,21 @@ class GammaGame(Game):
 
     def scores(self) -> list[float]:
         return list(self.cumulative_profit)
+
+    # ------------------------------------------------------------------ rendering
+
+    def render(self, cycle: int | None = None, names: list[str] | None = None) -> "Figure":
+        """One cycle (default: the current one): every negotiation round, then the play stage.
+        See arena_games_dev.gamma.render. Needs the optional `render` extra (matplotlib)."""
+        from arena_games_dev.gamma.render import render_cycle
+
+        return render_cycle(self, cycle, names)
+
+    def render_match(self, names: list[str] | None = None) -> "Figure":
+        """Overview of the whole match so far. Needs the optional `render` extra."""
+        from arena_games_dev.gamma.render import render_match
+
+        return render_match(self, names)
 
     # ------------------------------------------------------------------ action parsing
 

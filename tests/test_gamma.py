@@ -185,13 +185,19 @@ def test_missing_answers_count_as_deny():
     assert game.action_valid_last_step == [True, True, True]
 
 
-def test_malformed_allocations_deploy_nothing():
+def test_malformed_allocations_keep_the_last_allocation():
     game = GammaGame(instance=_instance([100] * 3))
     _negotiate(game, [[], [], []], ALL_ACCEPT)
     game.step([[40, 41, 40], [10, 0], [1.0, 0, 0]])  # over the fleet, too short, float
-    assert game.allocation == [[0, 0, 0]] * 3
+    assert game.allocation == [[0, 0, 0]] * 3  # nothing deployed yet
     assert game.profit_last_turn == [0.0, 0.0, 0.0]
     assert game.action_valid_last_step == [False, False, False]
+
+    game.step([[20, 0, 0], [0, 20, 0], [0, 0, 10]])
+    game.step([None, [5], [0, 0, 30]])  # None (a forfeited seat), too short, valid
+    assert game.allocation == [[20, 0, 0], [0, 20, 0], [0, 0, 30]]
+    assert game.profit_last_turn == [60.0, 60.0, 40.0]  # 100 - 40, 100 - 40, 100 - 60
+    assert game.action_valid_last_step == [False, False, True]
 
 
 # ------------------------------------------------------------------ scoring
@@ -302,3 +308,42 @@ def test_arena_plays_an_isolated_three_seat_match():
     assert result.forfeit is None, result.error
     in_process = play_match(GammaGame, [FairShare, Grim, Raider], seed=2)
     assert result.scores == in_process.scores
+
+
+# ------------------------------------------------------------------ analysis and rendering
+
+
+def test_negotiation_log_keeps_every_round_of_every_cycle():
+    game = play([FairShare(0), Grim(1), Raider(2)], seed=1)
+    assert len(game.negotiation_log) == GammaGame.N_CYCLES
+    for log, record in zip(game.negotiation_log, game.records, strict=True):
+        assert len(log) == record["rounds"]
+        assert log[-1]["claims"] == record["claims"]
+        assert log[-1]["accept"] == record["accept"]
+
+
+def test_trespasses_follow_the_accepted_final_claims():
+    from arena_games_dev.gamma.render import trespasses
+
+    game = GammaGame(instance=_instance([100] * 3))
+    # P0 claims node 0, accepted by P1 only; P1 claims node 1, accepted by everyone.
+    answers = [{1: True, 2: True}, {0: True, 2: True}, {0: False, 1: True}]
+    for _ in range(GammaGame.MAX_NEGOTIATION_ROUNDS):  # not unanimous: all rounds are played
+        _negotiate(game, [[0], [1], []], answers)
+    game.step([[0, 5, 0], [5, 0, 0], [5, 5, 0]])
+    assert trespasses(game, 0) == [{1}, {0}, {1}]  # P2 denied P0's claim: node 0 is fair game
+
+
+def test_render_every_phase(tmp_path):
+    pytest.importorskip("matplotlib")
+    names = ["FairShare", "Greedy", "Raider"]
+    game = GammaGame(seed=3)
+    players = [FairShare(0), Greedy(1), Raider(2)]
+    game.step([p.act(game.observe(p.player_id)) for p in players])  # claims, answers pending
+    game.render(names=names).savefig(tmp_path / "respond.png")
+    while not game.is_over():
+        game.step([p.act(game.observe(p.player_id)) for p in players])
+        if game.phase == "play" and game.turn_in_cycle == 3:
+            game.render(names=names).savefig(tmp_path / f"cycle_{game.cycle}.png")
+    game.render_match(names).savefig(tmp_path / "overview.png")
+    assert len(list(tmp_path.glob("*.png"))) == 2 + GammaGame.N_CYCLES

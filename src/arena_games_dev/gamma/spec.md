@@ -275,11 +275,11 @@ list. Convert them with `int(...)` and `list(...)`.
 |---|---|
 | `"propose"` | the empty claim `[]` |
 | `"respond"` | `{}`: deny both claims |
-| `"play"` | all zeros: no drone deployed this turn (no revenue, no upkeep) |
+| `"play"` | your last valid allocation (all zeros before your first one): your drones stay where they are |
 
 A play action is invalid if it is not a list of exactly `n_nodes` non-negative ints, or if its
 sum is more than 120. There is no partial application: a play action over the fleet size
-deploys nothing at all.
+leaves all your drones where they were.
 
 ## Scoring
 
@@ -353,9 +353,13 @@ tolerance.
 The match ends after the 100th play turn (the 10th play turn of cycle 9). There is no winner:
 each player's result is its score, the profit it collected.
 
-Your strategy forfeits if it raises an exception, takes longer than 1 second for one call of
-`act` (10 seconds for `__init__`), or crashes. The match then stops for all players, and every
-player keeps the profit collected until then.
+Your strategy forfeits the rest of the match if it raises an exception, takes longer than
+1 second for one call of `act` (10 seconds for `__init__`), or crashes. From that step on your
+action is `None`, which is invalid in every phase (see "Action"): you claim nothing, you deny
+every claim (so no later negotiation can be unanimous), and your drones stay deployed as on your
+last valid play turn. They still take their share of each node's demand and still cost upkeep,
+and both still count for your score. The match always plays on to the end, even if every player
+has forfeited.
 
 ## Tournament and ranking
 

@@ -419,10 +419,10 @@ The game ends after 100 turns (turns 0 to 99). There is no winner: each player's
 score, the profit it collected.
 
 Your strategy forfeits the rest of the match if it raises an exception, takes longer than
-1 second for one call of `act` (10 seconds for `__init__`), or crashes. You keep the profit
-collected until then. From that turn on your moves are empty: your drones stay where they are and
-still take their share of each node's demand, but nothing they collect or cost counts for you
-any more. The opponent plays on to the end.
+1 second for one call of `act` (10 seconds for `__init__`), or crashes. From that turn on your
+moves are empty: your drones stay where they are, still take their share of each node's demand
+and still cost upkeep, and both still count for your score. The match always plays on to the
+end, even if both players have forfeited.
 
 ## Tournament and ranking
 
