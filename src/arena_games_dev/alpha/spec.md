@@ -4,9 +4,8 @@
 
 Two players compete for demand on a fixed graph over a fixed number of turns. Each turn, both
 players move drones between nodes; drones present at a node capture a share of that node's demand
-proportional to the capacity they bring. Reward accumulates over the whole game. A match has no
-winner: what counts is the reward you collect, over all matches of a tournament (see
-"Tournament and ranking").
+proportional to the capacity they bring. Reward accumulates over the whole game, and the player
+with more reward wins the match (see "Tournament and ranking").
 
 This document is the complete definition of the game. You will not get the game's source code or
 a simulator, so everything needed to write a strategy, or to build your own simulator, is here.
@@ -250,8 +249,8 @@ Both players get reward 28 for turn 0. Player 0's observation on turn 1 is then:
 
 ## End of game
 
-The game ends after 100 turns (turns 0 to 99). There is no winner: each player's result is its
-score, the reward it collected.
+The game ends after 100 turns (turns 0 to 99). Each player's score is the reward it
+collected; the higher score wins (see "Tournament and ranking").
 
 Your strategy forfeits the rest of the match if it raises an exception, takes longer than
 1 second for one call of `act` (10 seconds for `__init__`), or crashes. From that turn on your
@@ -261,12 +260,24 @@ players have forfeited.
 
 ## Tournament and ranking
 
-Your strategy plays a tournament: every strategy in it (those of the other participants and a few
-reference strategies) plays every other one, in both seats. A separate tournament is played for
-each game and each budget setting.
+Every match has a result. The player with the higher score **wins** and the other one loses. If
+the two scores differ by at most 1% of `|score_0| + |score_1|`, the match is a **draw** (two
+scores of `0` are a draw). A strategy that forfeits stays in the match: its score still counts as
+described in "End of game", and the result is decided by the scores alone.
 
-Your result in a tournament is your **revenue share**: the total reward your strategy collected in
-all its matches, divided by the total reward collected by all strategies in the tournament.
-Winning or losing a match does not count, only reward does: your own reward counts in full, an
-opponent's reward only through the tournament's total, which it shares with every other strategy.
-Across games, the revenue shares are averaged.
+Your strategy plays a tournament against the strategies of the other teams: every pairing plays in
+both seats, on the same set of seeds. Each team takes part with several strategies (one per run
+of its harness); strategies of the same team never play each other. No reference strategies take
+part. A separate tournament is played for each game.
+
+Only results count, not by how much a match was won or lost:
+
+- A win counts 1, a draw ½, a loss 0. Your goal is to beat your opponent: lowering the
+  opponent's score helps you exactly as much as raising your own.
+- Every strategy gets a **rating** from all its results in the tournament, with the
+  Bradley–Terry model: strategy A beats strategy B with probability
+  `1 / (1 + 10 ** ((R_B - R_A) / 400))`, and the ratings `R` are those that make the observed
+  results most likely (a draw counts as half a win for each). Unlike a plain win rate, a rating
+  accounts for how strong the opponents were that a strategy happened to meet.
+- A team's rating in a game is the mean of the ratings of its strategies. Across games, a team's
+  ratings are averaged.

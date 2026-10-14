@@ -60,7 +60,6 @@ uv run arena run --game arena_games_dev.alpha:AlphaGame \
 |-------|--------|
 | alpha | done   |
 | beta  | draft: random map, upkeep, growing demand with a forecast window; balancing open |
-| gamma | draft: 3 players, negotiation (claims, accept/deny) between play stages, non-binding agreements; needs 3-seat tables in arena's tournament |
 
 ## Render a match
 
@@ -81,13 +80,4 @@ game, players = BetaGame(seed=3), [GreedyResponse(0), ProportionalSpread(1)]
 while not game.is_over():
     game.step([p.act(game.observe(p.player_id)) for p in players])
 game.render().savefig("beta_seed3.png")
-```
-
-Gamma's `render(cycle)` shows one cycle: every negotiation round (each player's claim and a ✓/✗
-matrix of who accepted whose claim), then the play stage; `render_match()` is an overview of
-the whole match. To play and render one match for every table of baselines (self tables
-included), with an `index.html` to browse them:
-
-```bash
-uv run --extra render python -m arena_games_dev.gamma.render --seed 1
 ```
